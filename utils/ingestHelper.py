@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import List, TypedDict
 from pathlib import Path
 
-
 class Document(TypedDict):
 
 	filename: str

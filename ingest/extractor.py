@@ -405,7 +405,7 @@ def Ingest(input_dir: str, output_json_dir: str) -> None:
 			errorCnt += 1
 			continue
 
-	print(f"\n🎯 === EXTRACTION SUMMARY ===")
+	print(f"\n=== EXTRACTION SUMMARY ===")
 	print(f"Files processed: {processedCnt}")
 	print(f"Files skipped: {skippedCnt}")
 	print(f"Files with errors: {errorCnt}")
