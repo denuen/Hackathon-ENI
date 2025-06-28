@@ -1,9 +1,11 @@
 import os
 import re
 import json
+import hashlib
 from datetime import datetime
-from typing import List, TypedDict
+from typing import List, TypedDict, Optional
 from pathlib import Path
+
 
 class Document(TypedDict):
 
@@ -67,3 +69,58 @@ def saveDocumentJson(doc: Document, outputDir: str) -> None:
 
 	except OSError as e:
 		raise OSError(f"Error: cannot save the JSON document in {outputDir}: {e}")
+
+def getFileHash(filepath: str) -> str:
+	try:
+		hashMd5 = hashlib.md5()
+		with open(filepath, "rb") as f:
+			for chunk in iter(lambda: f.read(4096), b""):
+				hashMd5.update(chunk)
+		return hashMd5.hexdigest()
+	except Exception:
+		stat = os.stat(filepath)
+		return hashlib.md5(f"{filepath}_{stat.st_mtime}_{stat.st_size}".encode()).hexdigest()
+
+def getCachePath(base_dir: str = ".cache") -> str:
+	cacheDir = os.path.join(os.getcwd(), base_dir)
+	os.makedirs(cacheDir, exist_ok=True)
+	return cacheDir
+
+def getCachedContent(filepath: str, content_type: str = "transcription") -> Optional[str]:
+	try:
+		fileHash = getFileHash(filepath)
+		cacheDir = getCachePath()
+		cacheFile = os.path.join(cacheDir, f"{fileHash}_{content_type}.txt")
+
+		if os.path.exists(cacheFile):
+			with open(cacheFile, 'r', encoding='utf-8') as f:
+				cachedContent = f.read().strip()
+			if cachedContent:
+				print(f"Using cached {content_type}")
+				return cachedContent
+		return None
+	except Exception:
+		return None
+
+def saveToCache(filepath: str, content: str, content_type: str = "transcription") -> None:
+	try:
+		if not content or not content.strip():
+			return
+
+		fileHash = getFileHash(filepath)
+		cacheDir = getCachePath()
+		cacheFile = os.path.join(cacheDir, f"{fileHash}_{content_type}.txt")
+
+		with open(cacheFile, 'w', encoding='utf-8') as f:
+			f.write(content)
+	except Exception as e:
+		print(f"Error: Failed to cache {content_type}: {e}")
+
+def clearCache(base_dir: str = ".cache") -> None:
+	try:
+		cacheDir = getCachePath(base_dir)
+		for file in os.listdir(cacheDir):
+			if file.endswith('.txt'):
+				os.remove(os.path.join(cacheDir, file))
+	except Exception as e:
+		print(f"Error: failed to clear cache: {e}")

@@ -10,3 +10,4 @@ pathlib
 typing-extensions>=4.0.0
 pdfplumber
 pandas>=2.0.0
+langdetect>=1.0.9

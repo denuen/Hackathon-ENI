@@ -5,8 +5,15 @@ import re
 import json
 import csv
 from pathlib import Path
-from typing import Set, List
-from utils.ingestHelper import Document, buildDocument, saveDocumentJson, normalizeWhitespaces
+from typing import Set, List, Dict, Optional
+from utils.ingestHelper import Document, buildDocument, saveDocumentJson, normalizeWhitespaces, getFileHash, getCachePath, getCachedContent, saveToCache, clearCache
+
+
+try:
+	from langdetect import detect, LangDetectException
+except ImportError:
+	detect = None
+	LangDetectException = None
 
 try:
 	import pdfplumber
@@ -47,6 +54,83 @@ VIDEO_EXTENSIONS: Set[str] = {
 WHISPER_MODEL = "base"
 CHUNK_DURATION = 30
 
+whisperModel = None
+configData = None
+
+def loadConfig(config_path: str = "config.json") -> Dict:
+	global configData
+	if configData is None:
+		try:
+			with open(config_path, 'r', encoding='utf-8') as f:
+				configData = json.load(f)
+		except FileNotFoundError:
+			configData = {
+				"default_language": "auto",
+				"ocr_languages": ["eng", "ita"],
+				"whisperModel": "base",
+				"whisper_initial_prompts": {
+					"it": "Trascrizione di contenuto aziendale ENI in italiano.",
+					"en": "Transcription of ENI corporate content in English."
+				},
+				"corporate_terms": {
+					"en": {"ebitda": "EBITDA", "roi": "ROI"},
+					"it": {"ebitda": "EBITDA", "roi": "ROI"}
+				}
+			}
+	return configData
+
+def detectLanguage(text: str, fallback: str = "en") -> str:
+	if not detect or not text or len(text.strip()) < 20:
+		return fallback
+
+	try:
+		sample = text[:1000] if len(text) > 1000 else text
+		detectedLang = detect(sample)
+
+		langMapping = {
+			"it": "it", "en": "en", "fr": "fr", "de": "de",
+			"es": "es", "pt": "pt", "ca": "es", "gl": "es"
+		}
+
+		return langMapping.get(detectedLang, fallback)
+
+	except (LangDetectException, Exception):
+		return fallback
+
+def convert_to_tika_codes(langs: List[str]) -> str:
+	langMap = {
+		"en": "eng", "it": "ita", "fr": "fra",
+		"de": "deu", "es": "spa", "pt": "por"
+	}
+	return "+".join([langMap.get(lang, "eng") for lang in langs])
+
+def apply_corporate_corrections(text: str, lang: str, config: Dict) -> str:
+	if not text or not text.strip():
+		return ""
+
+	text = normalizeWhitespaces(text)
+
+	corporate_terms = config.get("corporate_terms", {}).get(lang, {})
+
+	for wrong, correct in corporate_terms.items():
+		pattern = r'\b' + re.escape(wrong) + r'\b'
+		text = re.sub(pattern, correct, text, flags=re.IGNORECASE)
+
+	text = re.sub(r'\s+([,.!?;:])', r'\1', text)
+	text = re.sub(r'([,.!?;:])\s*([a-zA-Z])', r'\1 \2', text)
+	text = re.sub(r'\s+', ' ', text)
+
+	sentences = re.split(r'([.!?]+)', text)
+	result = []
+	for i, sentence in enumerate(sentences):
+		if i % 2 == 0 and sentence.strip():
+			sentence = sentence.strip()
+			if sentence:
+				sentence = sentence[0].upper() + sentence[1:] if len(sentence) > 1 else sentence.upper()
+		result.append(sentence)
+
+	return ''.join(result).strip()
+
 def isValidDocument(filepath: str) -> bool:
 	ext = Path(filepath).suffix.lower()
 	return ext in DOCUMENT_EXTENSIONS
@@ -57,10 +141,19 @@ def isValidMedia(filepath: str) -> bool:
 	return ext in AUDIO_EXTENSIONS or ext in VIDEO_EXTENSIONS
 
 
-# Extracts text from documents
-def extractTextFromFile(filepath: str) -> str:
+# Extracts text from documents with language detection support and caching
+def extractTextFromFile(filepath: str, ocr_langs: Optional[List[str]] = None) -> str:
 
 	file_ext = Path(filepath).suffix.lower()
+	config = loadConfig()
+
+	if ocr_langs is None:
+		ocr_langs = config.get("ocr_languages", ["eng", "ita"])
+
+	if file_ext in ['.pdf', '.doc', '.docx', '.odt', '.rtf', '.ppt', '.pptx', '.odp']:
+		cached_text = getCachedContent(filepath, "extraction")
+		if cached_text:
+			return cached_text
 
 	if file_ext == '.txt':
 		try:
@@ -200,7 +293,9 @@ def extractTextFromFile(filepath: str) -> str:
 
 			if text_content.strip():
 				text_content = normalizeWhitespaces(text_content)
-				return text_content.strip()
+				result_text = text_content.strip()
+				saveToCache(filepath, result_text, "extraction")
+				return result_text
 			else:
 				print("Warning: No text content extracted from PDF")
 				return ""
@@ -210,15 +305,17 @@ def extractTextFromFile(filepath: str) -> str:
 			# Fallback to Tika if pdfplumber fails
 			pass
 
-	# Fallback to Tika for other document types
+	# Fallback to Tika for other document types with dynamic language support
 	if parser is None:
 		return ""
 
 	try:
+		tikaLangs = convert_to_tika_codes(ocr_langs)
+
 		parsed = parser.from_file(filepath, requestOptions={
 			'timeout': 300,
 			'headers': {
-				'X-Tika-OCRLanguage': 'ita+eng',
+				'X-Tika-OCRLanguage': tikaLangs,
 				'X-Tika-OCREngine': 'tesseract',
 				'X-Tika-ExtractInlineImages': 'true',
 				'X-Tika-OCRStrategy': 'auto',
@@ -232,9 +329,12 @@ def extractTextFromFile(filepath: str) -> str:
 
 		content = normalizeWhitespaces(content)
 
+		saveToCache(filepath, content, "extraction")
+
 		return content
 
 	except Exception as e:
+		print(f"Error: tika extraction failed: {e}")
 		return ""
 
 # Extracts audio from video files with optimized settings for faster processing
@@ -262,13 +362,13 @@ def extractAudioFromVideo(videoPath: str, audioPath: str) -> bool:
 
 	except subprocess.CalledProcessError as e:
 		try:
-			simple_cmd = [
+			simpleCmd = [
 				'ffmpeg', '-i', videoPath,
 				'-vn', '-acodec', 'pcm_s16le',
 				'-ar', '16000', '-ac', '1',
 				'-preset', 'ultrafast', '-y', audioPath
 			]
-			subprocess.run(simple_cmd, capture_output=True, text=True, check=True)
+			subprocess.run(simpleCmd, capture_output=True, text=True, check=True)
 			return os.path.exists(audioPath) and os.path.getsize(audioPath) > 0
 		except:
 			return False
@@ -276,22 +376,37 @@ def extractAudioFromVideo(videoPath: str, audioPath: str) -> bool:
 	except FileNotFoundError:
 		return False
 
-# Transcribes audio files
-def transcribeAudio(filepath: str) -> str:
+# Transcribes audio files with dynamic language support and caching
+def transcribeAudio(filepath: str, language: Optional[str] = None, initial_prompt: Optional[str] = None) -> str:
 
 	if whisper is None:
 		raise RuntimeError("Whisper not found.")
 
+	cached_transcription = getCachedContent(filepath, "transcription")
+	if cached_transcription:
+		return cached_transcription
+
+	config = loadConfig()
+
 	try:
-		global whisper_model
-		if whisper_model is not None:
-			model = whisper_model
+		global whisperModel
+		if whisperModel is not None:
+			model = whisperModel
 		else:
-			model = whisper.load_model(WHISPER_MODEL)
+			modelName = config.get("whisperModel", "base")
+			model = whisper.load_model(modelName)
+
+		whisperLanguage = None if language == "auto" or language is None else language
+
+		if initial_prompt is None and language:
+			initial_prompt = config.get("whisper_initial_prompts", {}).get(
+				language,
+				"Professional transcription."
+			)
 
 		result = model.transcribe(
 			filepath,
-			language="it",
+			language=whisperLanguage,
 			task="transcribe",
 			temperature=0.0,
 			word_timestamps=False,
@@ -305,7 +420,7 @@ def transcribeAudio(filepath: str) -> str:
 			patience=None,
 			length_penalty=None,
 			suppress_tokens=[-1],
-			initial_prompt="Trascrizione di contenuto aziendale ENI in italiano.",
+			initial_prompt=initial_prompt,
 		)
 
 		text = result.get('text', '').strip()
@@ -313,21 +428,30 @@ def transcribeAudio(filepath: str) -> str:
 			return ""
 
 		text = normalizeWhitespaces(text)
-		text = postProcessNamingForCorporate(text)
+
+		if not language or language == "auto":
+			detectedLang = detectLanguage(text, "en")
+		else:
+			detectedLang = language
+
+		text = apply_corporate_corrections(text, detectedLang, config)
+
+		saveToCache(filepath, text, "transcription")
 
 		return text
 
 	except Exception as e:
+		print(f"   ❌ Transcription failed: {e}")
 		return ""
 
 
-# Processes media files (audio/video) and returns transcribed content
-def ProcessMediaFile(filepath: str) -> str:
+# Processes media files (audio/video) and returns transcribed content with language support
+def ProcessMediaFile(filepath: str, language: Optional[str] = None, initial_prompt: Optional[str] = None) -> str:
 
 	fileExt = Path(filepath).suffix.lower()
 
 	if fileExt in AUDIO_EXTENSIONS:
-		return transcribeAudio(filepath)
+		return transcribeAudio(filepath, language=language, initial_prompt=initial_prompt)
 
 	if fileExt in VIDEO_EXTENSIONS:
 		with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmpAudio:
@@ -335,7 +459,7 @@ def ProcessMediaFile(filepath: str) -> str:
 
 		try:
 			if extractAudioFromVideo(filepath, tmpAudioPath):
-				return transcribeAudio(tmpAudioPath)
+				return transcribeAudio(tmpAudioPath, language=language, initial_prompt=initial_prompt)
 			else:
 				return ""
 		finally:
@@ -344,8 +468,8 @@ def ProcessMediaFile(filepath: str) -> str:
 
 	return ""
 
-# Processes all files in input directory and saves extracted content as JSON
-def Ingest(input_dir: str, output_json_dir: str) -> None:
+# Processes all files in input directory with multilingual support
+def Ingest(input_dir: str, output_json_dir: str, config_path: str = "config.json") -> None:
 
 	if not os.path.exists(input_dir):
 		raise FileNotFoundError(f"Error: input directory not found: {input_dir}")
@@ -353,21 +477,26 @@ def Ingest(input_dir: str, output_json_dir: str) -> None:
 	if not os.path.isdir(input_dir):
 		raise ValueError(f"Error: the specified path is not a directory: {input_dir}")
 
+	config = loadConfig(config_path)
+
 	processedCnt = 0
 	skippedCnt = 0
 	errorCnt = 0
 
-	global whisper_model
+	global whisperModel
 	if whisper is not None:
 		try:
-			whisper_model = whisper.load_model(WHISPER_MODEL)
-		except:
-			whisper_model = None
+			modelName = config.get("whisperModel", "base")
+			whisperModel = whisper.load_model(modelName)
+		except Exception as e:
+			print(f"Failed to load Whisper model: {e}")
+			whisperModel = None
 	else:
-		whisper_model = None
+		whisperModel = None
 
 	files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
 	total_files = len(files)
+
 
 	for i, filename in enumerate(files):
 		filepath = os.path.join(input_dir, filename)
@@ -378,30 +507,61 @@ def Ingest(input_dir: str, output_json_dir: str) -> None:
 			file_extension = Path(filepath).suffix.lower().lstrip('.')
 
 			content = ""
+			languageDetected = config.get("default_language", "auto")
+
 			if isValidDocument(filepath):
-				content = extractTextFromFile(filepath)
+				content = extractTextFromFile(filepath, ocr_langs=config.get("ocr_languages"))
+
+				if content.strip() and config.get("default_language") == "auto":
+					languageDetected = detectLanguage(content, "en")
+					print(f"Detected language: {languageDetected}")
+
 			elif isValidMedia(filepath):
-				content = ProcessMediaFile(filepath)
+				if config.get("default_language") == "auto":
+					languageDetected = None
+				else:
+					languageDetected = config.get("default_language")
+
+				initial_prompt = None
+				if languageDetected:
+					initial_prompt = config.get("whisper_initial_prompts", {}).get(languageDetected)
+
+				content = ProcessMediaFile(
+					filepath,
+					language=languageDetected,
+					initial_prompt=initial_prompt
+				)
+
+				if content.strip() and languageDetected is None:
+					languageDetected = detectLanguage(content, "en")
+					print(f"Detected language: {languageDetected}")
+
 			else:
+				print(f"Error: unsupported file type")
 				skippedCnt += 1
 				continue
 
 			if not content.strip():
+				print(f"Error: no content extracted")
 				skippedCnt += 1
 				continue
+
+			if isValidDocument(filepath):
+				content = apply_corporate_corrections(content, languageDetected, config)
 
 			document = buildDocument(
 				filepath=filepath,
 				doc_type=file_extension,
 				content=content,
-				language="it"
+				language=languageDetected or "unknown"
 			)
 
 			saveDocumentJson(document, output_json_dir)
-
 			processedCnt += 1
 
+
 		except Exception as e:
+			print(f"Error: error processing {filename}: {str(e)}")
 			errorCnt += 1
 			continue
 
@@ -410,78 +570,10 @@ def Ingest(input_dir: str, output_json_dir: str) -> None:
 	print(f"Files skipped: {skippedCnt}")
 	print(f"Files with errors: {errorCnt}")
 	print(f"Total examined: {processedCnt + skippedCnt + errorCnt}")
+	print(f"Cache directory: {getCachePath()}")
 
 
+# Legacy function
 def postProcessNamingForCorporate(text: str) -> str:
-
-	if not text or not text.strip():
-		return ""
-
-	text = normalizeWhitespaces(text)
-
-	corporate_corrections = {
-		'ebitda': 'EBITDA',
-		'ebita': 'EBITA',
-		'roi': 'ROI',
-		'roe': 'ROE',
-		'roa': 'ROA',
-		'kpi': 'KPI',
-		'ceo': 'CEO',
-		'cfo': 'CFO',
-		'coo': 'COO',
-		'pnl': 'P&L',
-		'bilancio': 'bilancio',
-		'fatturato': 'fatturato',
-		'ricavi': 'ricavi',
-		'costi': 'costi',
-		'margini': 'margini',
-		'budget': 'budget',
-		'forecast': 'forecast',
-		'gws': 'GWS',
-		'lng': 'LNG',
-		'gnl': 'GNL',
-		'upstream': 'upstream',
-		'downstream': 'downstream',
-		'midstream': 'midstream',
-		'raffinazione': 'raffinazione',
-		'petrolchimico': 'petrolchimico',
-		'esplorazione': 'esplorazione',
-		'produzione': 'produzione',
-		'barili': 'barili',
-		'boe': 'BOE',
-		'bcf': 'BCF',
-		'tcf': 'TCF',
-		'quindi': 'quindi',
-		'tuttavia': 'tuttavia',
-		'infatti': 'infatti',
-		'inoltre': 'inoltre',
-		'pertanto': 'pertanto',
-		'comunque': 'comunque',
-		'sicuramente': 'sicuramente',
-		'naturalmente': 'naturalmente',
-		'miliardo': 'miliardo',
-		'milioni': 'milioni',
-		'migliaia': 'migliaia',
-		'percento': 'percento',
-		'virgola': ',',
-		'punto': '.',
-	}
-
-	for wrong, correct in corporate_corrections.items():
-		pattern = r'\b' + re.escape(wrong) + r'\b'
-		text = re.sub(pattern, correct, text, flags=re.IGNORECASE)
-
-	text = re.sub(r'\s+([,.!?;:])', r'\1', text)
-	text = re.sub(r'([,.!?;:])\s*([a-zA-Z])', r'\1 \2', text)
-	text = re.sub(r'\s+', ' ', text)
-
-	sentences = re.split(r'([.!?]+)', text)
-	result = []
-	for i, sentence in enumerate(sentences):
-		if i % 2 == 0 and sentence.strip():
-			sentence = sentence.strip()
-			if sentence:
-				sentence = sentence[0].upper() + sentence[1:] if len(sentence) > 1 else sentence.upper()
-		result.append(sentence)
-
-	return ''.join(result).strip()
+	config = loadConfig()
+	return apply_corporate_corrections(text, "it", config)
