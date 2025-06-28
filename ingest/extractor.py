@@ -44,12 +44,8 @@ VIDEO_EXTENSIONS: Set[str] = {
 	'.flv', '.3gp', '.mpg', '.mpeg'
 }
 
-# Ottimizzazione: usa modello più piccolo per velocità mantenendo qualità accettabile
-WHISPER_MODEL = "small"  # Cambio da "medium" a "small" per 3-4x più veloce
-CHUNK_DURATION = 30  # Secondi per chunk audio per processing parallelo
-
-# Global variable for pre-loaded Whisper model
-whisper_model = None
+WHISPER_MODEL = "base"
+CHUNK_DURATION = 30
 
 def isValidDocument(filepath: str) -> bool:
 	ext = Path(filepath).suffix.lower()
