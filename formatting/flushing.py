@@ -1,7 +1,7 @@
 import os
 import json
 
-def accumulation(json_string):
+def flushing(json_string):
     try:
         data = json.loads(json_string)
     except json.JSONDecodeError:
