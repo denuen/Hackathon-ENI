@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 
 export default function FileUploader({ onUploaded }) {
   const [files, setFiles] = useState([]);
+  const [inputKeyword, setInputKeyword] = useState("");
+  const [keywords, setKeywords] = useState([]);
   const inputRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -16,11 +18,26 @@ export default function FileUploader({ onUploaded }) {
     setFiles((currFiles) => currFiles.filter((_, i) => i !== index));
   };
 
+  const handleKeywordKeyDown = (e) => {
+    if (e.key === "Enter" && inputKeyword.trim() !== "") {
+      e.preventDefault();
+      if (!keywords.includes(inputKeyword.trim())) {
+        setKeywords([...keywords, inputKeyword.trim()]);
+      }
+      setInputKeyword("");
+    }
+  };
+
+  const removeKeyword = (index) => {
+    setKeywords((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleUpload = async () => {
     if (files.length === 0) return alert("Seleziona almeno un file");
 
     const formData = new FormData();
     files.forEach(file => formData.append("files", file));
+    keywords.forEach(kw => formData.append("keywords", kw)); // ✅ tutte le keyword
 
     const res = await fetch("http://localhost:5000/api/upload", {
       method: "POST",
@@ -46,6 +63,34 @@ export default function FileUploader({ onUploaded }) {
       <button onClick={handleUpload} className="upload-btn">
         Carica
       </button>
+
+      <div className="keywords-section">
+        <input
+          type="text"
+          placeholder="Scrivi e premi Invio per aggiungere"
+          value={inputKeyword}
+          onChange={(e) => setInputKeyword(e.target.value)}
+          onKeyDown={handleKeywordKeyDown}
+          className="keyword-input"
+        />
+
+        <div className="keyword-list">
+          {keywords.map((kw, i) => (
+            <span key={i} className="keyword-tag">
+              {kw}
+              <button
+                type="button"
+                className="remove-keyword-btn"
+                onClick={() => removeKeyword(i)}
+                aria-label={`Rimuovi keyword ${kw}`}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+
       <div className="file-list">
         {files.length > 0 ? (
           files.map((file, i) => (

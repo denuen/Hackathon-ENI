@@ -140,4 +140,53 @@
     line-height: 1.4;
   }
   
+  .keyword-input {
+    margin-top: 1rem;
+    padding: 0.4rem 0.6rem;
+    width: 100%;
+    max-width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+  }
+  
 
+  .keywords-section {
+    margin-top: 1rem;
+  }
+  
+  .keyword-input {
+    padding: 0.4rem 0.6rem;
+    width: 100%;
+    max-width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+  }
+  
+  .keyword-list {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .keyword-tag {
+    background-color: #e0f0ff;
+    color: #003366;
+    padding: 0.3rem 0.6rem;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.85rem;
+  }
+  
+  .remove-keyword-btn {
+    background: none;
+    border: none;
+    color: #003366;
+    font-weight: bold;
+    margin-left: 0.5rem;
+    cursor: pointer;
+  }
+  
