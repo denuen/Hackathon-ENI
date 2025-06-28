@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function Sidebar({ onSelect }) {
+export default function SideBar({ onSelect }) {
   const [storico, setStorico] = useState([]);
 
   useEffect(() => {
