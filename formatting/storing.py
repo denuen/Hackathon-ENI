@@ -4,7 +4,7 @@ from datetime import datetime
 
 STORAGE_FILE = "storico.json"
 
-def save_in_json(toStore):
+def store_answer(toStore):
     storico = []
 
     # Carica file se esiste

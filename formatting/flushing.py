@@ -18,5 +18,7 @@ def flushing(json_string):
         print(f"TITOLO: {title}")
         print(f"CONTENUTO: {content}")
         print("------")
+    
+    store_answer(data)
 
 #the content is still a print for a reason of the test, in the actual output it's going to added to the visualization
