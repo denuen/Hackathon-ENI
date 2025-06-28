@@ -36,6 +36,6 @@ def accumulation(json_string):
                 {"role": "user", "content": prompt}
             ]
         )
-        print(response["choices"][0]["message"]["content"])
+        return (response["choices"][0]["message"]["content"])
     except Exception as e:
-        print("Errore nel server", str(e))
+        return ("Errore nel server", str(e))
