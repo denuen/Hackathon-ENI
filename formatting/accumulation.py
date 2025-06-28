@@ -27,7 +27,7 @@ def accumulation(json_string):
 
     contenuto_completo += content + "\n\n"
 
-    prompt = f"Ecco un testo da analizzare: \n {contenuto_completo}\n Riorganizza il contenuto evitando ripetizioni, evita assolutamente di riassumere ancora di più il testo, e suddividilo in titoli e contenuti.\n Restituisci la risposta in formato JSON come array di oggetti, ciascuno con i campi 'title' e 'content', senza testo aggiuntivo."
+    prompt = f"Ecco un testo da analizzare: \n {contenuto_completo}\n Riorganizza il contenuto evitando ripetizioni, evita assolutamente di riassumere ancora di più il testo, e suddividilo in titoli e contenuti.\n Restituisci la risposta in formato JSON come array di oggetti, ciascuno con i campi 'title' e 'content', senza testo aggiuntivo. In cima a tutto dovrai inserire un campo 'Titolo' che sarà il titolo generale del testo."
     
     try:
         response = openai.ChatCompletion.create(

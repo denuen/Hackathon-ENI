@@ -4,7 +4,7 @@ export default function SummaryViewer({ summary }) {
 	if (!summary) {
 	  return (
 	    <div className="chat-placeholder">
-	      <p>Nessun contenuto disponibile. Carica un file per iniziare.</p>
+	      <p>Nessun contenuto disponibile. Riassumi un file per visualizzare il risultato.</p>
 	    </div>
 	  );
 	}

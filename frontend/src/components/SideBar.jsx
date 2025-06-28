@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react";
-import SummyLogo from "../../assets/SummyDef.png"; // assicurati che il path sia corretto
+import SummyLogo from "../../assets/SummyDef.png";
 
 export default function SideBar({ onSelect }) {
   const [storico, setStorico] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errore, setErrore] = useState(false);
 
   useEffect(() => {
     fetch("http://localhost:5000/api/storico")
-      .then(res => res.json())
-      .then(data => setStorico(data));
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) setStorico(data);
+        else setErrore(true);
+      })
+      .catch(() => setErrore(true))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -17,11 +27,18 @@ export default function SideBar({ onSelect }) {
         alt="Logo Summy"
         className="sidebar-logo"
       />
-      <h3>Storico</h3>
+      <h3 className="sidebar-title">Storico</h3>
+
+      {loading && <p>Caricamento...</p>}
+      {!loading && errore && <p className="sidebar-placeholder-empty">Nessun riassunto disponibile</p>}
+      {!loading && !errore && storico.length === 0 && (
+        <p className="sidebar-placeholder-empty">Nessun riassunto disponibile</p>
+      )}
+      
       <ul>
         {storico.map((item, idx) => (
           <li key={idx} onClick={() => onSelect(item)}>
-            {item.timestamp.slice(0, 16)}...
+            {item.Titolo ?? `Elemento ${idx + 1}`}
           </li>
         ))}
       </ul>

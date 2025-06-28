@@ -2,8 +2,9 @@ import { useState, useRef } from "react";
 
 export default function FileUploader({ onUploaded }) {
   const [files, setFiles] = useState([]);
-  const [inputKeyword, setInputKeyword] = useState("");
+  const [keyword, setKeyword] = useState("");
   const [keywords, setKeywords] = useState([]);
+  const [keywordError, setKeywordError] = useState(""); // stato per errore keyword
   const inputRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -18,34 +19,53 @@ export default function FileUploader({ onUploaded }) {
     setFiles((currFiles) => currFiles.filter((_, i) => i !== index));
   };
 
-  const handleKeywordKeyDown = (e) => {
-    if (e.key === "Enter" && inputKeyword.trim() !== "") {
-      e.preventDefault();
-      if (!keywords.includes(inputKeyword.trim())) {
-        setKeywords([...keywords, inputKeyword.trim()]);
-      }
-      setInputKeyword("");
+  const addKeyword = () => {
+    const trimmed = keyword.trim();
+    if (trimmed && !keywords.includes(trimmed)) {
+      setKeywords((prev) => [...prev, trimmed]);
+      setKeywordError(""); // reset errore se aggiunta keyword valida
     }
+    setKeyword("");
   };
 
   const removeKeyword = (index) => {
     setKeywords((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addKeyword();
+    }
+  };
+
   const handleUpload = async () => {
-    if (files.length === 0) return alert("Seleziona almeno un file");
+    if (files.length === 0) {
+      alert("Seleziona almeno un file");
+      return;
+    }
 
-    const formData = new FormData();
-    files.forEach(file => formData.append("files", file));
-    keywords.forEach(kw => formData.append("keywords", kw)); // ✅ tutte le keyword
+    if (keywords.length === 0) {
+      setKeywordError("Inserisci almeno una keyword prima di procedere");
+      return;
+    }
 
-    const res = await fetch("http://localhost:5000/api/upload", {
-      method: "POST",
-      body: formData
-    });
+    try {
+      const formData = new FormData();
+      files.forEach(file => formData.append("files", file));
+      keywords.forEach(kw => formData.append("keywords", kw));
 
-    const data = await res.json();
-    onUploaded(data);
+      const res = await fetch("http://localhost:5000/api/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      onUploaded(data);
+      setKeywordError(""); // reset errore in caso di successo
+    } catch (err) {
+      alert("Errore durante l'upload");
+    }
   };
 
   return (
@@ -57,23 +77,31 @@ export default function FileUploader({ onUploaded }) {
         onChange={handleFileChange}
         style={{ display: "none" }}
       />
-      <button type="button" onClick={triggerFileSelect} className="select-file-btn">
-        Scegli file
-      </button>
-      <button onClick={handleUpload} className="upload-btn">
-        Carica
-      </button>
+
+      <div className="button-group">
+        <button type="button" onClick={triggerFileSelect} className="select-file-btn">
+          Scegli file
+        </button>
+        <button onClick={handleUpload} className="upload-btn">
+          Riassumi
+        </button>
+      </div>
 
       <div className="keywords-section">
         <input
           type="text"
-          placeholder="Scrivi e premi Invio per aggiungere"
-          value={inputKeyword}
-          onChange={(e) => setInputKeyword(e.target.value)}
-          onKeyDown={handleKeywordKeyDown}
-          className="keyword-input"
+          placeholder="Aggiungi una keyword e premi Invio"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={handleKeyDown}
+          className={`keyword-input ${keywordError ? "keyword-input-error" : ""}`}
+          aria-describedby="keyword-error"
         />
-
+        {keywordError && (
+          <p id="keyword-error" className="keyword-error-message">
+            {keywordError}
+          </p>
+        )}
         <div className="keyword-list">
           {keywords.map((kw, i) => (
             <span key={i} className="keyword-tag">
@@ -107,7 +135,7 @@ export default function FileUploader({ onUploaded }) {
             </div>
           ))
         ) : (
-          <small>Seleziona un file</small>
+          <small></small>
         )}
       </div>
     </div>
