@@ -4,6 +4,6 @@
   "type": "csv",
   "content": "{ \"type\": \"table\", \"headers\": [ \"Trimestre\", \"Ricavi Gas (M€)\", \"Ricavi Elettricità (M€)\", \"EBITDA (M€)\", \"Note\" ], \"data\": [ { \"Trimestre\": \"Q1 2024\", \"Ricavi Gas (M€)\": \"2500\", \"Ricavi Elettricità (M€)\": \"1800\", \"EBITDA (M€)\": \"950\", \"Note\": \"Crescita del 5% rispetto Q1 2023\" }, { \"Trimestre\": \"Q2 2024\", \"Ricavi Gas (M€)\": \"2300\", \"Ricavi Elettricità (M€)\": \"1950\", \"EBITDA (M€)\": \"1020\", \"Note\": \"Stagionalità estiva favorevole\" }, { \"Trimestre\": \"Q3 2024\", \"Ricavi Gas (M€)\": \"2800\", \"Ricavi Elettricità (M€)\": \"2100\", \"EBITDA (M€)\": \"1150\", \"Note\": \"Picco consumo autunnale\" }, { \"Trimestre\": \"Q4 2024\", \"Ricavi Gas (M€)\": \"3200\", \"Ricavi Elettricità (M€)\": \"2300\", \"EBITDA (M€)\": \"1380\", \"Note\": \"Performance record per il trimestre\" }, { \"Trimestre\": \"Totale 2024\", \"Ricavi Gas (M€)\": \"10800\", \"Ricavi Elettricità (M€)\": \"8150\", \"EBITDA (M€)\": \"4500\", \"Note\": \"Obiettivi annuali superati del 3%\" } ], \"rows_count\": 5 }",
   "language": "it",
-  "createdAt": "2025-06-28T18:12:57.075375",
-  "modifiedAt": "2025-06-28T18:07:27.633197"
+  "created_at": "2025-06-28T18:12:57.075375",
+  "modified_at": "2025-06-28T18:07:27.633197"
 }

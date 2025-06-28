@@ -4,6 +4,6 @@
   "type": "txt",
   "content": "Questo è un documento di prova per testare l'estrazione di testo. Contiene del testo di esempio che dovrebbe essere estratto correttamente.",
   "language": "it",
-  "createdAt": "2025-06-28T18:12:57.014368",
-  "modifiedAt": "2025-06-28T18:07:27.634249"
+  "created_at": "2025-06-28T18:12:57.014368",
+  "modified_at": "2025-06-28T18:07:27.634249"
 }

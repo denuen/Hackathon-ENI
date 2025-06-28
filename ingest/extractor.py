@@ -57,7 +57,7 @@ def isValidMedia(filepath: str) -> bool:
 	return ext in AUDIO_EXTENSIONS or ext in VIDEO_EXTENSIONS
 
 
-# Extracts text from documents with optimizations for corporate files
+# Extracts text from documents
 def extractTextFromFile(filepath: str) -> str:
 
 	file_ext = Path(filepath).suffix.lower()

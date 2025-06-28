@@ -42,8 +42,8 @@ def buildDocument(filepath: str, doc_type: str, content: str, language: str = "i
 			type=doc_type,
 			content=content,
 			language=language,
-			createdAt=createdAt,
-			modifiedAt=modifiedAt
+			created_at=createdAt,
+			modified_at=modifiedAt
 		)
 
 	except OSError as e:
