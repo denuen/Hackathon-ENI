@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SummyLogo from "../../assets/SummyDef.png"; // assicurati che il path sia corretto
 
 export default function SideBar({ onSelect }) {
   const [storico, setStorico] = useState([]);
@@ -10,7 +11,12 @@ export default function SideBar({ onSelect }) {
   }, []);
 
   return (
-    <aside>
+    <aside className="sidebar">
+      <img
+        src={SummyLogo}
+        alt="Logo Summy"
+        className="sidebar-logo"
+      />
       <h3>Storico</h3>
       <ul>
         {storico.map((item, idx) => (
