@@ -8,3 +8,5 @@ numpy<2.0.0
 torch==2.1.0
 pathlib
 typing-extensions>=4.0.0
+pdfplumber
+pandas>=2.0.0

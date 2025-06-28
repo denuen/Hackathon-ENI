@@ -1,0 +1,2 @@
+Questo è un documento di prova per testare l'estrazione di testo.
+Contiene del testo di esempio che dovrebbe essere estratto correttamente.
