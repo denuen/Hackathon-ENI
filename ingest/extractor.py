@@ -36,11 +36,22 @@ try:
 except ImportError:
 	AudioSegment = None
 
+try:
+	from PIL import Image
+	import pytesseract
+except ImportError:
+	Image = None
+	pytesseract = None
+
 DOCUMENT_EXTENSIONS: Set[str] = {
 	'.pdf', '.txt', '.doc', '.docx', '.odt', '.rtf',
 	'.ppt', '.pptx', '.odp',
 	'.xlsx', '.xls', '.ods', '.csv',
 	'.xml', '.json'
+}
+IMAGE_EXTENSIONS: Set[str] = {
+	'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif',
+	'.gif', '.webp', '.svg'
 }
 AUDIO_EXTENSIONS: Set[str] = {
 	'.mp3', '.wav', '.m4a', '.aac', '.flac', '.ogg',
@@ -134,6 +145,11 @@ def apply_corporate_corrections(text: str, lang: str, config: Dict) -> str:
 def isValidDocument(filepath: str) -> bool:
 	ext = Path(filepath).suffix.lower()
 	return ext in DOCUMENT_EXTENSIONS
+
+
+def isValidImage(filepath: str) -> bool:
+	ext = Path(filepath).suffix.lower()
+	return ext in IMAGE_EXTENSIONS
 
 
 def isValidMedia(filepath: str) -> bool:
@@ -516,6 +532,13 @@ def Ingest(input_dir: str, output_json_dir: str, config_path: str = "config.json
 					languageDetected = detectLanguage(content, "en")
 					print(f"Detected language: {languageDetected}")
 
+			elif isValidImage(filepath):
+				content = extractTextFromImage(filepath, ocr_langs=config.get("ocr_languages"))
+
+				if content.strip() and config.get("default_language") == "auto":
+					languageDetected = detectLanguage(content, "en")
+					print(f"Detected language: {languageDetected}")
+
 			elif isValidMedia(filepath):
 				if config.get("default_language") == "auto":
 					languageDetected = None
@@ -546,7 +569,7 @@ def Ingest(input_dir: str, output_json_dir: str, config_path: str = "config.json
 				skippedCnt += 1
 				continue
 
-			if isValidDocument(filepath):
+			if isValidDocument(filepath) or isValidImage(filepath):
 				content = apply_corporate_corrections(content, languageDetected, config)
 
 			document = buildDocument(
@@ -577,3 +600,42 @@ def Ingest(input_dir: str, output_json_dir: str, config_path: str = "config.json
 def postProcessNamingForCorporate(text: str) -> str:
 	config = loadConfig()
 	return apply_corporate_corrections(text, "it", config)
+
+# Extracts text from images using OCR with language detection support and caching
+def extractTextFromImage(filepath: str, ocr_langs: Optional[List[str]] = None) -> str:
+
+	if Image is None or pytesseract is None:
+		return ""
+
+	config = loadConfig()
+
+	if ocr_langs is None:
+		ocr_langs = config.get("ocr_languages", ["eng", "ita"])
+
+	cached_text = getCachedContent(filepath, "extraction")
+	if cached_text:
+		return cached_text
+
+	try:
+		with Image.open(filepath) as img:
+			if img.mode != 'RGB':
+				img = img.convert('RGB')
+
+			lang_codes = '+'.join(ocr_langs)
+
+			custom_config = f'--oem 3 --psm 6 -l {lang_codes}'
+
+			extracted_text = pytesseract.image_to_string(img, config=custom_config)
+
+			if not extracted_text.strip():
+				return ""
+
+			extracted_text = normalizeWhitespaces(extracted_text)
+			result_text = extracted_text.strip()
+
+			saveToCache(filepath, result_text, "extraction")
+
+			return result_text
+
+	except Exception as e:
+		return ""
