@@ -1,7 +1,7 @@
 import os
 import json
 
-def flushing(json_string):
+def flush(json_string):
     try:
         data = json.loads(json_string)
     except json.JSONDecodeError:

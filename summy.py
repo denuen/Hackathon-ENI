@@ -47,7 +47,6 @@ def main():
     try:
         # Fase 1: Esecuzione dell'ingest
         print("\n[FASE 1] Avvio processo di ingest...")
-        # Nota: l'Ingest prende come input due stringhe (o Path) per le directory
         Ingest(str(input_dir), str(ingest_output_dir))
         print("Ingest completato con successo!")
         
@@ -68,7 +67,6 @@ def main():
 
         # Fase 2: Esecuzione del summarization
         print("\n[FASE 2] Avvio processo di summarization...")
-        # Configurazione del chunker
         chunker_cfg = ChunkerConfig(
             max_tokens=1024,
             handle_audio_video=True,
@@ -77,10 +75,10 @@ def main():
             max_concurrency=5
         )
         chunker = Chunker(chunker_cfg)
-        # Esecuzione asincrona
         summarized_docs = asyncio.run(chunker.process_documents(ingested_docs))
         print(f"Summarization completato! {len(summarized_docs)} documenti elaborati")
-        
+
+
         # Salva i risultati del summarization
         print("\nSalvataggio risultati del summarization...")
         for i, doc in enumerate(summarized_docs):
@@ -91,11 +89,16 @@ def main():
         
         print("\nElaborazione completata con successo!")
         
+        # Esegui la tua funzione con l'output del summarization
+	accumulated_summarizes = accumulation(summarized_docs)
+	flush(accumulated_summarizes)
+
     except Exception as e:
         print(f"\nERRORE durante l'elaborazione: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
