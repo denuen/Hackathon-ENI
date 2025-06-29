@@ -1,4 +1,7 @@
+
 # Documentazione Utente – Summy: La piattaforma per trasferire conoscenza
+
+![Showcase Summy](documentation/showcase.png)
 
 ## Che cos’è Summy?
 
@@ -52,9 +55,3 @@ Presto sarà disponibile una funzione di accesso con login, che ti permetterà d
 * Accelerare i processi grazie a meccanismi di caching dei risultati.
 
 ---
-
-Se hai bisogno di assistenza o vuoi approfondire qualche funzionalità, siamo a disposizione per aiutarti a sfruttare al meglio Summy nella tua attività quotidiana.
-
----
-
-Se vuoi posso aiutarti a trasformare questa documentazione in una guida più visiva o in formato PDF da condividere. Vuoi?
