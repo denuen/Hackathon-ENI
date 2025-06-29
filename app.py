@@ -38,7 +38,12 @@ CORS(app, resources={
 app.config['MAX_CONTENT_LENGTH'] = 100 * 5000 * 2048  # 100MB max file size
 UPLOAD_FOLDER = Path(__file__).parent / "input"
 OUTPUT_FOLDER = Path(__file__).parent / "output"
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc', 'docx', 'csv', 'mp3', 'wav', 'mp4', 'avi', 'mov'}
+ALLOWED_EXTENSIONS = {'pdf', 'txt', 'doc', 'docx', 'odt', 'rtf',
+	'ppt', 'pptx', 'odp', 'xlsx', 'xls', 'ods', 'csv',
+	'xml', 'json','jpg', 'jpeg', 'png', 'bmp', 'tiff', 'tif',
+	'gif', 'webp', 'svg', 'csv', 'mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg',
+	'wma', 'amr', 'opus', 'mov', 'mp4', 'avi', 'mkv', 'wmv', 'webm', 'm4v',
+	'flv', '3gp', 'mpg', 'mpeg'}
 
 # Crea le directory necessarie
 UPLOAD_FOLDER.mkdir(exist_ok=True, parents=True)
