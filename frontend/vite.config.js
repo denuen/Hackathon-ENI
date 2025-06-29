@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:5000' // Redireziona tutte le API al backend Flask
+      '/api': 'http://localhost:8000' // Redireziona tutte le API al backend Flask
     }
   }
 });

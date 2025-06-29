@@ -21,3 +21,13 @@ def store_answer(toStore):
     # Salva aggiornato
     with open(STORAGE_FILE, "w") as f:
         json.dump(storico, f, indent=4)
+
+def get_stored_documents():
+    """Recupera tutti i documenti salvati nel file storico"""
+    if os.path.exists(STORAGE_FILE):
+        try:
+            with open(STORAGE_FILE, "r") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            return []
+    return []

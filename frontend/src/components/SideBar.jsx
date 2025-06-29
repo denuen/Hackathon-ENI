@@ -7,7 +7,7 @@ export default function SideBar({ onSelect }) {
   const [errore, setErrore] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/storico")
+    fetch("/api/storico")
       .then(res => {
         if (!res.ok) throw new Error();
         return res.json();
@@ -34,7 +34,7 @@ export default function SideBar({ onSelect }) {
       {!loading && !errore && storico.length === 0 && (
         <p className="sidebar-placeholder-empty">Nessun riassunto disponibile</p>
       )}
-      
+
       <ul>
         {storico.map((item, idx) => (
           <li key={idx} onClick={() => onSelect(item)}>

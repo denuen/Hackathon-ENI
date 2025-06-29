@@ -1,0 +1,9 @@
+{
+  "filename": "bilancio_eni_2024.csv",
+  "tags": [],
+  "type": "csv",
+  "content": "{ \"type\": \"table\", \"headers\": [ \"Trimestre\", \"ricavi Gas (M€)\", \"ricavi Elettricità (M€)\", \"EBITDA (M€)\", \"Note\" ], \"data\": [ { \"Trimestre\": \"Q1 2024\", \"ricavi Gas (M€)\": \"2500\", \"ricavi Elettricità (M€)\": \"1800\", \"EBITDA (M€)\": \"950\", \"Note\": \"Crescita del 5% rispetto Q1 2023\" }, { \"Trimestre\": \"Q2 2024\", \"ricavi Gas (M€)\": \"2300\", \"ricavi Elettricità (M€)\": \"1950\", \"EBITDA (M€)\": \"1020\", \"Note\": \"Stagionalità estiva favorevole\" }, { \"Trimestre\": \"Q3 2024\", \"ricavi Gas (M€)\": \"2800\", \"ricavi Elettricità (M€)\": \"2100\", \"EBITDA (M€)\": \"1150\", \"Note\": \"Picco consumo autunnale\" }, { \"Trimestre\": \"Q4 2024\", \"ricavi Gas (M€)\": \"3200\", \"ricavi Elettricità (M€)\": \"2300\", \"EBITDA (M€)\": \"1380\", \"Note\": \"Performance record per il trimestre\" }, { \"Trimestre\": \"Totale 2024\", \"ricavi Gas (M€)\": \"10800\", \"ricavi Elettricità (M€)\": \"8150\", \"EBITDA (M€)\": \"4500\", \"Note\": \"Obiettivi annuali superati del 3%\" } ], \"rows_count\": 5 }",
+  "language": "it",
+  "created_at": "2025-06-29T04:18:48.754296",
+  "modified_at": "2025-06-29T04:18:48.754296"
+}

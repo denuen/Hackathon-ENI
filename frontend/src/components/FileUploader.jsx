@@ -55,7 +55,7 @@ export default function FileUploader({ onUploaded }) {
       files.forEach(file => formData.append("files", file));
       keywords.forEach(kw => formData.append("keywords", kw));
 
-      const res = await fetch("http://localhost:5000/api/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
         body: formData
       });

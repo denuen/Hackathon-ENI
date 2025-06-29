@@ -35,7 +35,7 @@ def main():
 
     # Verifica presenza file nella directory di input
     input_files = [f for f in input_dir.iterdir() if f.is_file()]
-    
+
     if not input_files:
         print("Nessun file trovato nella directory di input")
         return
@@ -49,14 +49,14 @@ def main():
         print("\n[FASE 1] Avvio processo di ingest...")
         Ingest(str(input_dir), str(ingest_output_dir))
         print("Ingest completato con successo!")
-        
+
         # Carica i file prodotti dall'ingest (file JSON)
         ingest_files = list(ingest_output_dir.glob("*.json"))
-        
+
         if not ingest_files:
             print("Nessun file prodotto dall'ingest")
             return
-            
+
         print(f"\n{len(ingest_files)} file prodotti dall'ingest:")
         ingested_docs = []
         for json_file in ingest_files:
@@ -86,11 +86,12 @@ def main():
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(doc, f, indent=2, ensure_ascii=False)
             print(f"  - Salvato: {output_file}")
-        
+
         print("\nElaborazione completata con successo!")
-        
+        print(summarized_docs)
         # Esegui la tua funzione con l'output del summarization
-	accumulated_summarizes = accumulation(summarized_docs)
+        from formatting.accumulation import accumulation
+        accumulated_summarizes = accumulation(summarized_docs)
 
     except Exception as e:
         print(f"\nERRORE durante l'elaborazione: {e}")
