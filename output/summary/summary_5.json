@@ -1,9 +1,9 @@
 {
-  "filename": "bilancio_eni_2024.csv",
+  "filename": "Doc Ai Test.pdf",
   "tags": [],
-  "type": "csv",
-  "content": "Trimestre | ricavi Gas (M€) | ricavi Elettricità (M€) | EBITDA (M€) | Note\nQ1 2024 | 2500 | 1800 | 950 | Crescita del 5% rispetto Q1 2023\nQ2 2024 | 2300 | 1950 | 1020 | Stagionalità estiva favorevole\nQ3 2024 | 2800 | 2100 | 1150 | Picco consumo autunnale\nQ4 2024 | 3200 | 2300 | 1380 | Performance record per il trimestre\nTotale 2024 | 10800 | 8150 | 4500 | Obiettivi annuali superati del 3%",
+  "type": "pdf",
+  "content": "L’Intelligenza Artificiale (AI) è un tema centrale del XXI secolo, con applicazioni che spaziano dalla diagnosi medica alla robotica industriale. L'AI è un campo interdisciplinare che unisce matematica, informatica, neuroscienze, filosofia, economia e arte, cercando di emulare l'intelligenza umana. La storia dell'AI inizia con miti antichi e progetti come il cavaliere meccanico di Leonardo da Vinci, ma prende forma concreta nel XX secolo con le basi della computazione. Alan Turing, con la sua macchina di Turing e il test di Turing, ha posto le fondamenta per la ricerca sull'intelligenza delle macchine. La conferenza di Dartmouth del 1956 segna la nascita ufficiale dell'AI, con l'idea di creare macchine capaci di tradurre lingue e fare scoperte scientifiche. Negli anni '60 e '70, l'AI simbolica ha visto successi con programmi come ELIZA e sistemi esperti come MYCIN, ma ha incontrato limiti nella gestione della conoscenza. Gli 'inverni' dell'AI, periodi di stagnazione dovuti a delusioni e tagli nei finanziamenti, hanno portato a una rinascita grazie a reti neurali e modelli probabilistici. Il Machine Learning e il Deep Learning, con architetture come CNN e Transformer, hanno rivoluzionato il campo, permettendo progressi in NLP e giochi complessi come AlphaGo. Applicazioni storiche includono il trionfo di Deep Blue sugli scacchi e l'uso dell'AI in medicina per diagnosi avanzate. I veicoli autonomi, iniziati con il progetto ALV, stanno evolvendo verso un'adozione di massa. La storia dell'AI è un percorso ricco di insegnamenti, con un futuro che esplorerà tecniche avanzate e affronterà questioni etiche e sociali.",
   "language": "it",
-  "created_at": "2025-06-29T04:18:48.754296",
-  "modified_at": "2025-06-29T04:18:48.754296"
+  "created_at": "2025-06-28T21:46:54.237368",
+  "modified_at": "2025-06-28T21:46:54.237368"
 }

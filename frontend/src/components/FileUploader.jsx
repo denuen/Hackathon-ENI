@@ -4,11 +4,17 @@ export default function FileUploader({ onUploaded }) {
   const [files, setFiles] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [keywords, setKeywords] = useState([]);
-  const [keywordError, setKeywordError] = useState(""); // stato per errore keyword
+  const [keywordError, setKeywordError] = useState("");
+  const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
 
   const handleFileChange = (e) => {
-    setFiles([...e.target.files]);
+    const newFiles = Array.from(e.target.files);
+    setFiles((currFiles) => {
+      const existingNames = new Set(currFiles.map(f => f.name));
+      const filteredNewFiles = newFiles.filter(f => !existingNames.has(f.name));
+      return [...currFiles, ...filteredNewFiles];
+    });
   };
 
   const triggerFileSelect = () => {
@@ -23,7 +29,7 @@ export default function FileUploader({ onUploaded }) {
     const trimmed = keyword.trim();
     if (trimmed && !keywords.includes(trimmed)) {
       setKeywords((prev) => [...prev, trimmed]);
-      setKeywordError(""); // reset errore se aggiunta keyword valida
+      setKeywordError("");
     }
     setKeyword("");
   };
@@ -50,6 +56,7 @@ export default function FileUploader({ onUploaded }) {
       return;
     }
 
+    setLoading(true);
     try {
       const formData = new FormData();
       files.forEach(file => formData.append("files", file));
@@ -62,9 +69,11 @@ export default function FileUploader({ onUploaded }) {
 
       const data = await res.json();
       onUploaded(data);
-      setKeywordError(""); // reset errore in caso di successo
+      setKeywordError("");
     } catch (err) {
       alert("Errore durante l'upload");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,27 +85,60 @@ export default function FileUploader({ onUploaded }) {
         ref={inputRef}
         onChange={handleFileChange}
         style={{ display: "none" }}
+        disabled={loading}
       />
 
       <div className="button-group">
-        <button type="button" onClick={triggerFileSelect} className="select-file-btn">
+        <button
+          type="button"
+          onClick={triggerFileSelect}
+          className="select-file-btn"
+          disabled={loading}
+        >
           Scegli file
         </button>
-        <button onClick={handleUpload} className="upload-btn">
-          Riassumi
+        <button
+          onClick={handleUpload}
+          className="upload-btn"
+          disabled={loading}
+        >
+          {loading ? "Caricamento..." : "Riassumi"}
         </button>
+        {loading && (
+          <div className="spinner" aria-label="Caricamento in corso"></div>
+        )}
       </div>
 
       <div className="keywords-section">
-        <input
-          type="text"
-          placeholder="Aggiungi una keyword e premi Invio"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className={`keyword-input ${keywordError ? "keyword-input-error" : ""}`}
-          aria-describedby="keyword-error"
-        />
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <input
+            id="keyword-input"
+            type="text"
+            placeholder="Inserisci keyword"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className={`keyword-input ${keywordError ? "keyword-input-error" : ""}`}
+            aria-describedby="keyword-error keyword-instruction"
+            disabled={loading}
+            style={{ flexGrow: 1 }}
+          />
+          <button
+            type="button"
+            onClick={addKeyword}
+            disabled={loading}
+            aria-label="Aggiungi keyword"
+            className="add-keyword-btn"
+          >
+            Invio
+          </button>
+        </div>
+        <small
+          id="keyword-instruction"
+          style={{ display: "block", marginTop: 4, color: "#666", fontSize: "0.85rem" }}
+        >
+          Premi o clicca "Invio" per aggiungere la keyword
+        </small>
         {keywordError && (
           <p id="keyword-error" className="keyword-error-message">
             {keywordError}
@@ -111,6 +153,7 @@ export default function FileUploader({ onUploaded }) {
                 className="remove-keyword-btn"
                 onClick={() => removeKeyword(i)}
                 aria-label={`Rimuovi keyword ${kw}`}
+                disabled={loading}
               >
                 ✕
               </button>
@@ -129,6 +172,7 @@ export default function FileUploader({ onUploaded }) {
                 className="remove-file-btn"
                 onClick={() => removeFile(i)}
                 aria-label={`Rimuovi file ${file.name}`}
+                disabled={loading}
               >
                 ✕
               </button>
