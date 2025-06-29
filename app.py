@@ -71,6 +71,11 @@ def upload_files():
         if not files or all(f.filename == '' for f in files):
             return jsonify({"error": "Nessun file selezionato"}), 400
 
+        # Rimuove tutti i file presenti nella cartella input prima di salvare i nuovi
+        for existing_file in UPLOAD_FOLDER.iterdir():
+            if existing_file.is_file():
+                existing_file.unlink()
+
         uploaded_files = []
 
         # Salva i file uploadati
