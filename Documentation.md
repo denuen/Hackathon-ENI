@@ -7,7 +7,7 @@
 
 Summy è uno strumento semplice e potente pensato per aiutarti a gestire e comprendere facilmente grandi quantità di documenti, file e dati aziendali, anche molto diversi tra loro. Puoi caricare documenti, immagini, audio, video e molto altro: Summy si occupa di riassumere e organizzare tutto in modo chiaro.
 
----
+----
 
 ## Come funziona?
 
