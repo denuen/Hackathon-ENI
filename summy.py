@@ -91,7 +91,6 @@ def main():
         
         # Esegui la tua funzione con l'output del summarization
 	accumulated_summarizes = accumulation(summarized_docs)
-	flush(accumulated_summarizes)
 
     except Exception as e:
         print(f"\nERRORE durante l'elaborazione: {e}")
