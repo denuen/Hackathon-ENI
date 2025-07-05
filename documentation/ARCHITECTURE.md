@@ -54,18 +54,6 @@ npm run dev
 
 Il frontend sarà disponibile su `http://localhost:5173` (o porta simile)
 
-### 4. Script di Avvio Automatico
-
-Per semplificare l'avvio, puoi utilizzare lo script fornito:
-
-```bash
-# Rendi eseguibile lo script
-chmod +x start.sh
-
-# Esegui lo script
-./start.sh
-```
-
 ## 📚 API Endpoints
 
 ### Backend (Flask) - `http://localhost:8000/api`
