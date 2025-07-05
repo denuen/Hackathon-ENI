@@ -6,6 +6,8 @@ export default function FileUploader({ onUploaded }) {
   const [keywords, setKeywords] = useState([]);
   const [keywordError, setKeywordError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTask, setCurrentTask] = useState("");
   const inputRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -51,30 +53,97 @@ export default function FileUploader({ onUploaded }) {
       return;
     }
 
-    if (keywords.length === 0) {
-      setKeywordError("Inserisci almeno una keyword prima di procedere");
-      return;
-    }
-
     setLoading(true);
+    setProgress(0);
+    setCurrentTask("Inizializzazione...");
+
+    const stopProgress = simulateProgress();
+
     try {
       const formData = new FormData();
       files.forEach(file => formData.append("files", file));
       keywords.forEach(kw => formData.append("keywords", kw));
 
+      console.log("Inizio upload con timeout di 10 minuti...");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minuti
+
       const res = await fetch("/api/upload", {
         method: "POST",
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+      stopProgress();
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Errore sconosciuto" }));
+        throw new Error(errorData.error || `Errore HTTP ${res.status}`);
+      }
+
       const data = await res.json();
+      console.log("Upload completato con successo:", data);
+
+      setProgress(100);
+      setCurrentTask("Completato!");
+
       onUploaded(data);
       setKeywordError("");
     } catch (err) {
-      alert("Errore durante l'upload");
+      console.error("Errore durante l'upload:", err);
+      stopProgress();
+      setProgress(0);
+      setCurrentTask("");
+
+      if (err.name === 'AbortError') {
+        alert("Timeout: L'elaborazione sta richiedendo troppo tempo. Riprova con file più piccoli.");
+      } else {
+        alert(`Errore durante l'upload: ${err.message}`);
+      }
     } finally {
       setLoading(false);
+      setTimeout(() => {
+        setProgress(0);
+        setCurrentTask("");
+      }, 2000);
     }
+  };
+
+  // Funzione per simulare il progresso dell'elaborazione
+  const simulateProgress = () => {
+    const progressSteps = [
+      { progress: 5, message: "Caricamento file...", delay: 500 },
+      { progress: 15, message: "Analisi dei documenti...", delay: 1200 },
+      { progress: 25, message: "Estrazione del contenuto...", delay: 1800 },
+      { progress: 35, message: "Elaborazione con AI...", delay: 2500 },
+      { progress: 50, message: "Generazione riassunti...", delay: 3000 },
+      { progress: 65, message: "Applicazione focus keywords...", delay: 2200 },
+      { progress: 75, message: "Organizzazione delle sezioni...", delay: 1500 },
+      { progress: 85, message: "Strutturazione finale...", delay: 1800 },
+      { progress: 95, message: "Completamento...", delay: 1000 }
+    ];
+
+    let currentStep = 0;
+
+    const runNextStep = () => {
+      if (currentStep < progressSteps.length) {
+        const step = progressSteps[currentStep];
+        setProgress(step.progress);
+        setCurrentTask(step.message);
+        currentStep++;
+
+        setTimeout(runNextStep, step.delay + Math.random() * 500);
+      }
+    };
+
+    // Avvia la simulazione
+    runNextStep();
+
+    // funzione per fermare la simulazione
+    return () => {
+      currentStep = progressSteps.length;
+    };
   };
 
   return (
@@ -102,12 +171,28 @@ export default function FileUploader({ onUploaded }) {
           className="upload-btn"
           disabled={loading}
         >
-          {loading ? "Caricamento..." : "Riassumi"}
+          {loading ? "Elaborazione in corso..." : "Riassumi"}
         </button>
         {loading && (
           <div className="spinner" aria-label="Caricamento in corso"></div>
         )}
       </div>
+
+      {/* Barra di progresso */}
+      {loading && (
+        <div className="progress-container">
+          <div className="progress-bar">
+            <div
+              className="progress-fill"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          <div className="progress-text">
+            <span className="progress-percentage">{progress}%</span>
+            <span className="progress-message">{currentTask}</span>
+          </div>
+        </div>
+      )}
 
       <div className="keywords-section">
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>

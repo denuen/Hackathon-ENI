@@ -63,13 +63,23 @@ def health_check():
 def upload_files():
     """Endpoint per l'upload e l'elaborazione dei file"""
     try:
+        print("DEBUG: Inizio upload_files")
+
         if 'files' not in request.files:
+            print("DEBUG: Nessun file nel request")
             return jsonify({"error": "Nessun file fornito"}), 400
 
         files = request.files.getlist('files')
+        print(f"DEBUG: Ricevuti {len(files)} file")
 
         if not files or all(f.filename == '' for f in files):
+            print("DEBUG: Nessun file selezionato")
             return jsonify({"error": "Nessun file selezionato"}), 400
+
+        # Raccoglie le keywords dal form
+        keywords = request.form.getlist('keywords')
+        keywords = [kw.strip() for kw in keywords if kw.strip()]  # Rimuove keywords vuote
+        print(f"DEBUG: Keywords ricevute: {keywords}")
 
         # Rimuove tutti i file presenti nella cartella input prima di salvare i nuovi
         for existing_file in UPLOAD_FOLDER.iterdir():
@@ -85,22 +95,30 @@ def upload_files():
                 file_path = UPLOAD_FOLDER / filename
                 file.save(str(file_path))
                 uploaded_files.append(filename)
+                print(f"DEBUG: Salvato file: {filename}")
             else:
+                print(f"DEBUG: Tipo di file non supportato: {file.filename}")
                 return jsonify({"error": f"Tipo di file non supportato: {file.filename}"}), 400
 
-        # Elabora i file
-        result = process_files()
+        print("DEBUG: Inizio elaborazione file")
+        # Elabora i file con le keywords
+        result = process_files(keywords)
+        print(f"DEBUG: Risultato elaborazione: {result}")
 
         return jsonify({
             "message": "File caricati ed elaborati con successo",
             "uploaded_files": uploaded_files,
+            "keywords": keywords,
             "processing_result": result
         })
 
     except Exception as e:
+        print(f"ERROR: Errore in upload_files: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": f"Errore durante l'elaborazione: {str(e)}"}), 500
 
-def process_files():
+def process_files(keywords=None):
     """Elabora i file caricati attraverso il pipeline di ingest e summarization"""
     try:
         # Directory
@@ -129,7 +147,7 @@ def process_files():
                 doc_data = json.load(f)
                 ingested_docs.append(doc_data)
 
-        # Fase 2: Summarization
+        # Fase 2: Summarization con keywords
         chunker_cfg = ChunkerConfig(
             max_tokens=1024,
             handle_audio_video=True,
@@ -138,6 +156,11 @@ def process_files():
             max_concurrency=5
         )
         chunker = Chunker(chunker_cfg)
+
+        # Passa le keywords al chunker
+        if keywords:
+            chunker.set_keywords(keywords)
+
         summarized_docs = asyncio.run(chunker.process_documents(ingested_docs))
 
         # Salva i risultati del summarization
@@ -148,17 +171,15 @@ def process_files():
                 json.dump(doc, f, indent=2, ensure_ascii=False)
             summary_files.append(str(output_file))
 
-        # Fase 3: Accumulation
+        # Fase 3: Accumulation con keywords
         if summarized_docs:
-            print("\n\n\n\nmarcello\n\n\n")
-            print(summarized_docs)
-            print("\n\n\nmarcello\n\n\n")
-            accumulated_result = accumulation(summarized_docs)  # Prende il primo documento
+            accumulated_result = accumulation(summarized_docs, keywords)  # Passa le keywords
 
             return {
                 "status": "success",
                 "files_processed": len(input_files),
                 "summaries_created": len(summarized_docs),
+                "keywords_used": keywords or [],
                 "accumulated_result": accumulated_result
             }
 
